@@ -1,10 +1,12 @@
 #include <iostream>
-#include <cmath>
+#include <string>
 
 struct Point {
     unsigned long long x, y;
 
-    Point(unsigned long long x, unsigned long long y) : x(x), y(y) {}
+    Point(unsigned long long x, unsigned long long y) :
+            x(x), y(y) {}
+
 
     Point minx(Point const &rha) const {
         return Point(rha.x < x ? rha.x : x, y);
@@ -23,100 +25,125 @@ struct Point {
     }
 
     void print() const {
-        std::cout << "(" << x << "," << y << ")";
+        std::cout << '(' << x << ',' << y << ')';
     }
-
 };
 
-class Rectangle {
+class Rectangle : public Point {
 public:
-    Point rha;
+    Rectangle() : Point(0, 0) {};
 
-    Rectangle() : rha(0, 0) {};
+    Rectangle &operator=(const Rectangle &other) {};
 
-    Rectangle(Point const &rha_m) : rha(rha_m.x, rha_m.y) {};
+    Rectangle(Point const &rha) : Point(rha.x, rha.y) {};
 
-    Rectangle operator+(Rectangle const &rng) const {
-        Rectangle c(Point(rha.maxx(rng.rha).x, rha.maxy(rng.rha).y));
-        return c;
-    };
+    Rectangle operator+(Rectangle const &rha) const {
+        Point x = maxx(rha);
+        Point y = maxy(rha);
+        Point end = Point(x.x, y.y);
+        return Rectangle(end);
+    }
 
-    Rectangle operator*(Rectangle const &rng) const {
-        Rectangle c(Point(rha.minx(rng.rha).x, rha.miny(rng.rha).y));
-        return c;
-    };
+    Rectangle operator*(Rectangle const &rha) const {
+        Point x = minx(rha);
+        Point y = miny(rha);
+        Point end = Point(x.x, y.y);
+        return Rectangle(end);
+    }
 
-    void print() const {
-        std::cout << "(" << rha.x << "," << rha.y << ")";
+    void print_rectangle() const {
+        print();
     }
 };
 
-bool have(std::string expression, char symbol) {
-    bool ans = false;
-    for (int i = 0; i < expression.length(); i++)
-        if (expression[i] == symbol) ans = true;
-    return ans;
-}
 
-long long getNumber(std::string str) {
-    long long num = 0;
-    for (int i = 0; i < str.length(); i++) {
-        num += (str[i] - '0') * pow(10, str.length() - i - 1);
+Rectangle check_point(std::string str, size_t i) {
+    std::string str_1 = "";
+    std::string str_2 = "";
+    while (str[i + 1] != ',') {
+        str_1 = str_1 + str[i + 1];
+        i++;
     }
-    return num;
+    i++;
+    while (str[i + 1] != ')') {
+        str_2 = str_2 + str[i + 1];
+        i++;
+    }
+    size_t x = std::stoi(str_1);
+    size_t y = std::stoi(str_2);
+    Rectangle rec_1 = Rectangle(Point(x, y));
+    return rec_1;
 }
 
-std::string remo(char operation, std::string expression) {
-    while (have(expression, operation)) {
 
-        for (int i = 0; i < expression.length(); i++) {
-            if (expression[i] == operation) {
-                int m, n = 0;
-                for (int s = i; expression[s] != '('; s--)
-                    m = s;
-                for (int s = i; expression[s] != ')'; s++)
-                    n = s;
-                long long a1, a2, b1, b2 = 0;
-                std::string multstr = expression.substr(m, n - m + 1);
-                int count_of_commas = 0;
-                int pivot = 0;
-                for (int k = 0; k < multstr.length(); k++) {
-                    if ((count_of_commas == 0) && (multstr[k] == ',')) {
-                        a1 = getNumber(multstr.substr(0, k));
-                        count_of_commas = 1;
-                        pivot = k + 1;
-                    }
-                    if (multstr[k] == ')') {
-                        a2 = getNumber(multstr.substr(pivot, k - pivot));
-                        pivot = k + 5;
-                    }
-                    if ((count_of_commas == 1) && (multstr[k] == ',')) {
-                        b1 = getNumber(multstr.substr(pivot, k - pivot));
-                        b2 = getNumber(multstr.substr(k + 1, multstr.length() - k));
-                    }
-                }
-                Rectangle A(Point(a1, a2));
-                Rectangle B(Point(b1, b2));
-                Rectangle C;
-                if (operation == '*')
-                    C = A * B;
-                if (operation == '+')
-                    C = A + B;
-                multstr = std::to_string(C.rha.x) + "," + std::to_string(C.rha.y);
-                std::string modified_expression =
-                        expression.substr(0, m) + multstr + expression.substr(n + 1, expression.length() - n - 1);
-                expression = modified_expression;
+int check_point_score(std::string str, size_t i) {
+    int k = 0;
+    k++;
+    while (str[i + 1] != ',') {
+        i++;
+        k++;
+    }
+    i++;
+    k++;
+    while (str[i + 1] != ')') {
+        i++;
+        k++;
+    }
+
+    return k;
+}
+
+Rectangle sum1(Rectangle mas[], int k) {
+    for (int i = 0; i <= k; i++) {
+        Rectangle tmp = mas[0].operator+(mas[i]);
+        mas[0].x = tmp.x;
+        mas[0].y = tmp.y;
+    }
+    return mas[0];
+}
+
+
+Rectangle sum2(std::string str) {
+    int score = 0;
+    size_t l = str.size();
+    Rectangle *mas = new Rectangle[l / 5];
+    std::string str_1 = "";
+    std::string str_2 = "";
+    bool flag = true;
+    for (size_t i = 0; i < l; i++) {
+        if (str[i] == '*') {
+            flag = true;
+        } else {
+            flag = false;
+        }
+        if (i != 0) {
+            i++;
+        }
+        Rectangle rec_1 = check_point(str, i);
+        if (flag) {
+            Rectangle tmp = mas[score].operator*(rec_1);
+            mas[score].x = tmp.x;
+            mas[score].y = tmp.y;
+        } else {
+            if (i != 0) {
+                score++;
             }
-        };
-    };
-    return expression;
+            mas[score].x = rec_1.x;
+            mas[score].y = rec_1.y;
+        }
+        i = i + check_point_score(str, i);
+    }
+    Rectangle end_rec = sum1(mas, score);
+    end_rec.print_rectangle();
+    return end_rec;
 }
+
 
 int main() {
+
     std::string expression;
     std::getline(std::cin, expression);
 
-    expression = remo('*', expression);
-    expression = remo('+', expression);
+    sum2(expression);
     return 0;
 }
