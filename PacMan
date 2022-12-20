@@ -4,65 +4,65 @@
 
 using namespace sf;
 
-const int H = 21;
+const int H = 21;  //размер карты
 
-const int W = 19;
+const int W = 19;  //размер карты
 
-const int ts = 25;
+const int ts = 25;  //размер плиток
 
-int q = 0;
+int q = 0;  //очки игрока
 
-bool life = true;
+bool life = true;  //здоровье
 
 String TileMap[H] = {
 
 "AAAAAAAAAAAAAAAAAAA",
 
-"A1 A 2A",
+"A1	      A       2A",
 
 "A AA AAA A AAA AA A",
 
-"A A A",
+"A        A        A",
 
 "A AA A AAAAA A AA A",
 
-"A A A A A",
+"A    A   A   A    A",
 
 "AAAA AAA A AAA AAAA",
 
-"BBBA A A ABBB",
+"BBBA A       A ABBB",
 
 "AAAA A AAAAA A AAAA",
 
-"BBBB ABBBA BBBB",
+"BBBB   ABBBA   BBBB",
 
 "AAAA A AAAAA A AAAA",
 
-"BBBA A A ABBB",
+"BBBA A       A ABBB",
 
 "AAAA A AAAAA A AAAA",
 
-"A A A",
+"A        A        A",
 
 "A AA AAA A AAA AA A",
 
-"A A C A A",
+"A  A     C     A  A",
 
 "AA A A AAAAA A A AA",
 
-"A A A A A",
+"A    A   A   A    A",
 
 "A AAAAAA A AAAAAA A",
 
-"A3 4A",
+"A3               4A",
 
 "AAAAAAAAAAAAAAAAAAA",
 
-};
+};//лабиринт
 
 class Player {
 
-public:
+public:  //задали параметры ПакМэна
 
 	float frame = 0;
 
@@ -70,7 +70,7 @@ public:
 
 	int newx = 0, newy = 0;
 
-	int rotate = 1, ti = 0;
+	int rotate = 1, ti = 0;  //1-право, 2-влево, 3-вверх, 4-вниз; ti-задержка, чтобы игрок не летал по карте
 
 	void update() {
 
@@ -78,7 +78,7 @@ public:
 
 		if (frame > 5)
 
-			frame -= 5;
+			frame -= 5;  //у нас всего 5 кадров
 
 		ti++;
 
@@ -130,7 +130,7 @@ public:
 
 			if (TileMap[newy][newx] == ' ')
 
-				q++;
+				q++;  //подсчет очков
 
 			if (TileMap[newy][newx] == '1'
 
@@ -148,7 +148,7 @@ public:
 
 		}
 
-		if (newy == 9 && (newx == 0 || newx == 18)) {
+		if (newy == 9 && (newx == 0 || newx == 18)) {  //осуществление телепортации в другую сторону
 
 			if (newx == 0)
 
@@ -190,7 +190,7 @@ public:
 
 			for (int i = 0; i < 4; i++) {
 
-				rotate[i] = rand() % 4 + 1;
+				rotate[i] = rand() % 4 + 1;  //случайные повороты
 
 				newx[i] = x[i];
 
@@ -254,11 +254,11 @@ public:
 
 					TileMap[y[i]][x[i]] = ' ';
 
-				else if (TileMap[newy[i]][newx[i]] == 'C')
+				else if (TileMap[newy[i]][newx[i]] == 'C')  //встреча с игроком
 
 					life = false;
 
-				if (i == 0)
+				if (i == 0)  //прорисовка врагов
 
 					TileMap[newy[i]][newx[i]] = '1';
 
@@ -280,7 +280,7 @@ public:
 
 			}
 
-			if (newy[i] == 9 && (newx[i] == 0 || newx[i] == 18)) {
+			if (newy[i] == 9 && (newx[i] == 0 || newx[i] == 18)) {  //такая же телепортация
 
 				if (newx[i] == 0)
 
@@ -326,15 +326,15 @@ int main() {
 
 	RenderWindow window(VideoMode(W * ts, H * ts), "Maze!");
 
-	Texture t;
+	Texture t;  //загружаем картинку
 
-	t.loadFromFile("C:/Users/Андрей/Desktop/Paint/title.png");
+	t.loadFromFile("C:/msys64/home/User/Please_God_workt/title.png");
 
 	Sprite plat(t);
 
 	Texture yw;
 
-	yw.loadFromFile("C:/Users/Андрей/Desktop/Paint/youwin.png");
+	yw.loadFromFile("C:/msys64/home/User/Please_God_work/youwin.png");
 
 	Sprite youwin(yw);
 
@@ -342,7 +342,7 @@ int main() {
 
 	Texture yl;
 
-	yl.loadFromFile("C:/Users/Андрей/Desktop/Paint/youlose.png");
+	yl.loadFromFile("C:/msys64/home/User/Please_God_work/youlose.png");
 
 	Sprite youlose(yl);
 
@@ -367,7 +367,7 @@ int main() {
 
 			if (q < 171 && life)
 
-				if (event.type == Event::KeyPressed) {
+				if (event.type == Event::KeyPressed) {  //следим за движениями и поворотами
 
 					p.newx = p.x;
 
@@ -395,15 +395,15 @@ int main() {
 
 		if (q < 171 && life) {
 
-			p.update();
+			p.update();  //чтобы осуществлялась прорисовка кадров
 
-			en.update();
+			en.update();  //чтобы осуществлялась прорисовка кадров
 
 		}
 
-		window.clear(Color::Black);
+		window.clear(Color::Black);  //закрашиваем черным экран
 
-		for (int i = 0; i < H; i++)
+		for (int i = 0; i < H; i++)  //разные прорисовки (пакмэн,стены или пустота)
 
 			for (int j = 0; j < W; j++) {
 
@@ -413,7 +413,7 @@ int main() {
 
 				if (TileMap[i][j] == 'C')
 
-					plat.setTextureRect(IntRect(ts * int(p.frame), ts * p.rotate, ts, ts));
+					plat.setTextureRect(IntRect(ts * int(p.frame), ts * p.rotate, ts, ts));  //умножаем ts на фреймы, чтобы игрок совершал анимацию
 
 				if (TileMap[i][j] == ' ')
 
@@ -421,7 +421,7 @@ int main() {
 
 				if (TileMap[i][j] == '1')
 
-					plat.setTextureRect(IntRect(ts * 5, ts * en.rotate[0], ts, ts));
+					plat.setTextureRect(IntRect(ts * 5, ts * en.rotate[0], ts, ts));  //аналогично игроку
 
 				if (TileMap[i][j] == '2')
 
