@@ -1,0 +1,361 @@
+#include <SFML/Graphics.hpp>
+#include <iostream>
+#include <vector>
+#include <time.h>
+
+using namespace sf;
+
+const int H = 21;  //размер карты
+
+const int W = 19;  //размер карты
+
+const int ts = 25;  //размер плиток
+
+int q = 0;  //очки игрока
+
+bool life = true;  //здоровья погибшим
+
+String TileMap[H] = {
+"AAAAAAAAAAAAAAAAAAA",
+"A1	      A       2A",
+"A AA AAA A AAA AA A",
+"A        A        A",
+"A AA A AAAAA A AA A",
+"A    A   A   A    A",
+"AAAA AAA A AAA AAAA",
+"BBBA A       A ABBB",
+"AAAA A AAAAA A AAAA",
+"BBBB   ABBBA   BBBB",
+"AAAA A AAAAA A AAAA",
+"BBBA A       A ABBB",
+"AAAA A AAAAA A AAAA",
+"A        A        A",
+"A AA AAA A AAA AA A",
+"A  A     C     A  A",
+"AA A A AAAAA A A AA",
+"A    A   A   A    A",
+"A AAAAAA A AAAAAA A",
+"A3               4A",
+"AAAAAAAAAAAAAAAAAAA",
+};//лабиринт
+
+enum rotate {
+	right = 1,
+	left = 2,
+	up = 3,
+	down = 4
+};
+
+class Player {
+
+public:  //задали параметры ПакМэна
+
+	float frame = 0;
+
+	int x = 9, y = 15;
+
+	int newx = 0, newy = 0;
+
+	int rotate = right, ti = 0;  //ti-задержка, чтобы игрок не летал по карте
+
+	void update() {  //обновление кадров
+
+		frame += 0.01;
+
+		if (frame > 5)
+
+			frame -= 5;  //у нас всего 5 кадров
+
+		ti++;
+
+		if (ti >= 300) {
+
+			switch (rotate)
+
+			{
+
+			case right:
+
+				if (TileMap[y][newx + 1] != 'A')
+
+					newx += 1;
+
+				break;
+
+			case left:
+
+				if (TileMap[y][newx - 1] != 'A')
+
+					newx -= 1;
+
+				break;
+
+			case 3:
+
+				if (TileMap[newy - 1][x] != 'A')
+
+					newy -= 1;
+
+				break;
+
+			case 4:
+
+				if (TileMap[newy + 1][x] != 'A')
+
+					newy += 1;
+
+				break;
+
+			}
+
+			ti = 0;
+
+		}
+
+		if (TileMap[newy][newx] == ' ' || TileMap[newy][newx] == 'B') {
+
+			if (TileMap[newy][newx] == ' ')
+
+				q++;  //подсчет очков
+
+			if (TileMap[newy][newx] == '1' || TileMap[newy][newx] == '2' || 
+				TileMap[newy][newx] == '3' || TileMap[newy][newx] == '4')
+				life = false;
+
+			TileMap[y][x] = 'B';
+
+			TileMap[newy][newx] = 'C';
+
+			x = newx;
+			y = newy;
+		}
+
+		if (newy == 9 && (newx == 0 || newx == 18)) {  //осуществление телепортации в другую сторону
+
+			if (newx == 0)
+
+				newx = 17;
+
+			else
+
+				newx = 1;
+
+			TileMap[y][x] = 'B';
+
+			TileMap[newy][newx] = 'C';
+
+			x = newx;
+
+			y = newy;
+
+		}
+
+	}
+
+};
+
+class Enemy {
+public:
+	int x, y;
+	int rot;
+	int idx;
+	int ti = 0;
+
+	Enemy(int x, int y, int rot, int idx) : x(x), y(y), rot(rot), idx(idx) {}
+
+	void update() {
+		int newx = x;
+		int newy = y;
+		if (ti < 300) {
+			ti++;
+			return;
+		}
+		ti %= 300;
+
+		rot = rand() % 4 + 1;  //случайные повороты
+
+		switch (rot) {
+		case right:	
+			if (TileMap[y][x + 1] != 'A')
+				newx += 1;
+			break;
+
+		case left:
+			if (TileMap[y][x - 1] != 'A')
+				newx -= 1;
+			break;
+
+		case up:
+			if (TileMap[y - 1][x] != 'A')
+				newy -= 1;
+			break;
+
+		case down:
+			if (TileMap[y + 1][x] != 'A')
+				newy += 1;
+			break;
+		}
+
+		if (TileMap[newy][newx] == ' ' || TileMap[newy][newx] == 'B' ||
+			TileMap[newy][newx] == 'C') {
+			if (TileMap[newy][newx] == 'B')
+				TileMap[y][x] = 'B';
+			else if (TileMap[newy][newx] == ' ')
+				TileMap[y][x] = ' ';
+			else if (TileMap[newy][newx] == 'C')  //встреча с игроком
+				life = false;
+
+			TileMap[newy][newx] = '1' + idx;
+
+			x = newx;
+			y = newy;
+		}
+
+		if (newy == 9 && (newx == 0 || newx == 18)) {  //такая же телепортация
+			if (newx == 0)
+				newx = 17;
+			else
+				newx = 1;
+
+			TileMap[y][x] = 'B';
+			TileMap[newy][newx] = '1' + idx;
+
+			x = newx;
+			y = newy;
+
+		}
+	}
+
+};
+
+int main() {
+
+	srand(time(0));
+
+	RenderWindow window(VideoMode(W * ts, H * ts), "Maze!");
+
+	Texture t;  //загружаем картинки
+	t.loadFromFile("title.png");
+
+	Sprite plat(t);
+	
+	Texture yw;
+	yw.loadFromFile("youwin.png");
+
+	Sprite youwin(yw);
+	youwin.setPosition(100, 210);
+
+	Texture yl;
+	yl.loadFromFile("youlose.png");
+
+	Sprite youlose(yl);
+	youlose.setPosition(100, 210);
+
+	Player p;
+
+	std::vector<Enemy> enemies = {
+		Enemy(1 , 1 , 1, 0),
+		Enemy(17, 1 , 1, 1),
+		Enemy(1 , 19, 1, 2),
+		Enemy(17, 19, 1, 3)
+	};
+
+	while (window.isOpen())
+
+	{
+
+		Event event;
+
+		while (window.pollEvent(event))
+
+		{
+
+			if (event.type == Event::Closed)
+				window.close();
+
+			if (q < 171 && life)
+
+				if (event.type == Event::KeyPressed) {  //следим за движениями и поворотами
+
+					p.newx = p.x;
+
+					p.newy = p.y;
+
+					if (event.key.code == Keyboard::Right)
+
+						p.rotate = right;
+
+					if (event.key.code == Keyboard::Left)
+
+						p.rotate = left;
+
+					if (event.key.code == Keyboard::Up)
+
+						p.rotate = up;
+
+					if (event.key.code == Keyboard::Down)
+
+						p.rotate = down;
+
+				}
+
+		}
+
+		if (q < 171 && life) {
+
+			p.update();
+			for (auto& enemy : enemies) {
+				enemy.update();  //чтобы осуществлялась прорисовка кадров
+			}
+
+		}
+
+		window.clear(Color::Black);  //закрашиваем черным экран
+
+		for (int i = 0; i < H; i++)  //разные прорисовки (пакмэн,стены или пустота)
+
+			for (int j = 0; j < W; j++) {
+
+				if (TileMap[i][j] == 'A')
+
+					plat.setTextureRect(IntRect(0, 0, ts, ts));
+
+				if (TileMap[i][j] == 'C')
+
+					plat.setTextureRect(IntRect(ts * int(p.frame), ts * p.rotate, ts, ts));  
+				//умножаем ts на фреймы, чтобы игрок совершал анимацию
+
+				if (TileMap[i][j] == ' ')
+
+					plat.setTextureRect(IntRect(ts, 0, ts, ts));
+
+				if (0 <= TileMap[i][j] - '1' && TileMap[i][j] - '1' <= 3) {
+					int index = TileMap[i][j] - '1';
+					plat.setTextureRect(IntRect(ts * 5, ts * enemies[index].rot, ts, ts));  //аналогично игроку
+				}
+
+				if (TileMap[i][j] == 'B')
+
+					continue;
+
+				plat.setPosition(j * ts, i * ts);
+
+				window.draw(plat);
+
+			}
+
+		if (q == 171)
+
+			window.draw(youwin);
+
+		if (!life)
+
+			window.draw(youlose);
+
+		window.display();
+
+	}
+
+	return 0;
+
+}
