@@ -1,5 +1,6 @@
 #include <SFML/Graphics.hpp>
-
+#include <iostream>
+#include <vector>
 #include <time.h>
 
 using namespace sf;
@@ -12,53 +13,38 @@ const int ts = 25;  //размер плиток
 
 int q = 0;  //очки игрока
 
-bool life = true;  //здоровье
+bool life = true;  //здоровья погибшим
 
 String TileMap[H] = {
-
 "AAAAAAAAAAAAAAAAAAA",
-
-"A1	      A       2A",
-
+"A1	      A   2A",
 "A AA AAA A AAA AA A",
-
 "A        A        A",
-
 "A AA A AAAAA A AA A",
-
 "A    A   A   A    A",
-
 "AAAA AAA A AAA AAAA",
-
 "BBBA A       A ABBB",
-
 "AAAA A AAAAA A AAAA",
-
 "BBBB   ABBBA   BBBB",
-
 "AAAA A AAAAA A AAAA",
-
 "BBBA A       A ABBB",
-
 "AAAA A AAAAA A AAAA",
-
 "A        A        A",
-
 "A AA AAA A AAA AA A",
-
 "A  A     C     A  A",
-
 "AA A A AAAAA A A AA",
-
 "A    A   A   A    A",
-
 "A AAAAAA A AAAAAA A",
-
 "A3               4A",
-
 "AAAAAAAAAAAAAAAAAAA",
-
 };//лабиринт
+
+enum rotate {
+	right = 1,
+	left = 2,
+	up = 3,
+	down = 4
+};
 
 class Player {
 
@@ -70,9 +56,9 @@ public:  //задали параметры ПакМэна
 
 	int newx = 0, newy = 0;
 
-	int rotate = 1, ti = 0;  //1-право, 2-влево, 3-вверх, 4-вниз; ti-задержка, чтобы игрок не летал по карте
+	int rotate = right, ti = 0;  //ti-задержка, чтобы игрок не летал по карте
 
-	void update() {
+	void update() {  //обновление кадров
 
 		frame += 0.01;
 
@@ -88,7 +74,7 @@ public:  //задали параметры ПакМэна
 
 			{
 
-			case 1:
+			case right:
 
 				if (TileMap[y][newx + 1] != 'A')
 
@@ -96,7 +82,7 @@ public:  //задали параметры ПакМэна
 
 				break;
 
-			case 2:
+			case left:
 
 				if (TileMap[y][newx - 1] != 'A')
 
@@ -132,10 +118,8 @@ public:  //задали параметры ПакМэна
 
 				q++;  //подсчет очков
 
-			if (TileMap[newy][newx] == '1'
-
-				|| TileMap[newy][newx] == '2' || TileMap[newy][newx] == '3' || TileMap[newy][newx] == '4')
-
+			if (TileMap[newy][newx] == '1' || TileMap[newy][newx] == '2' || 
+				TileMap[newy][newx] == '3' || TileMap[newy][newx] == '4')
 				life = false;
 
 			TileMap[y][x] = 'B';
@@ -143,9 +127,7 @@ public:  //задали параметры ПакМэна
 			TileMap[newy][newx] = 'C';
 
 			x = newx;
-
 			y = newy;
-
 		}
 
 		if (newy == 9 && (newx == 0 || newx == 18)) {  //осуществление телепортации в другую сторону
@@ -173,149 +155,75 @@ public:  //задали параметры ПакМэна
 };
 
 class Enemy {
-
 public:
+	int x, y;
+	int rot;
+	int idx;
+	int ti = 0;
 
-	int x[4] = { 1, 17 , 1, 17 }, y[4] = { 1, 1, 19, 19 };
-
-	int newx[4] = { 0 , 0 , 0, 0 }, newy[4] = { 0, 0, 0, 0 };
-
-	int rotate[4] = { 1, 1, 1, 1 }, ti = 0;
+	Enemy(int x, int y, int rot, int idx) : x(x), y(y), rot(rot), idx(idx) {}
 
 	void update() {
+		int newx = x;
+		int newy = y;
+		if (ti < 300) {
+			ti++;
+			return;
+		}
+		ti %= 300;
 
-		ti++;
+		rot = rand() % 4 + 1;  //случайные повороты
 
-		if (ti >= 300) {
+		switch (rot) {
+		case right:	
+			if (TileMap[y][x + 1] != 'A')
+				newx += 1;
+			break;
 
-			for (int i = 0; i < 4; i++) {
+		case left:
+			if (TileMap[y][x - 1] != 'A')
+				newx -= 1;
+			break;
 
-				rotate[i] = rand() % 4 + 1;  //случайные повороты
+		case up:
+			if (TileMap[y - 1][x] != 'A')
+				newy -= 1;
+			break;
 
-				newx[i] = x[i];
-
-				newy[i] = y[i];
-
-				switch (rotate[i])
-
-				{
-
-				case 1:
-
-					if (TileMap[y[i]][newx[i] + 1] != 'A')
-
-						newx[i] += 1;
-
-					break;
-
-				case 2:
-
-					if (TileMap[y[i]][newx[i] - 1] != 'A')
-
-						newx[i] -= 1;
-
-					break;
-
-				case 3:
-
-					if (TileMap[newy[i] - 1][x[i]] != 'A')
-
-						newy[i] -= 1;
-
-					break;
-
-				case 4:
-
-					if (TileMap[newy[i] + 1][x[i]] != 'A')
-
-						newy[i] += 1;
-
-					break;
-
-				}
-
-			}
-
-			ti = 0;
-
+		case down:
+			if (TileMap[y + 1][x] != 'A')
+				newy += 1;
+			break;
 		}
 
-		for (int i = 0; i < 4; i++) {
+		if (TileMap[newy][newx] == ' ' || TileMap[newy][newx] == 'B' ||
+			TileMap[newy][newx] == 'C') {
+			if (TileMap[newy][newx] == 'B')
+				TileMap[y][x] = 'B';
+			else if (TileMap[newy][newx] == ' ')
+				TileMap[y][x] = ' ';
+			else if (TileMap[newy][newx] == 'C')  //встреча с игроком
+				life = false;
 
-			if (TileMap[newy[i]][newx[i]] == ' ' || TileMap[newy[i]][newx[i]] == 'B' ||
+			TileMap[newy][newx] = '1' + idx;
 
-				TileMap[newy[i]][newx[i]] == 'C') {
-
-				if (TileMap[newy[i]][newx[i]] == 'B')
-
-					TileMap[y[i]][x[i]] = 'B';
-
-				else if (TileMap[newy[i]][newx[i]] == ' ')
-
-					TileMap[y[i]][x[i]] = ' ';
-
-				else if (TileMap[newy[i]][newx[i]] == 'C')  //встреча с игроком
-
-					life = false;
-
-				if (i == 0)  //прорисовка врагов
-
-					TileMap[newy[i]][newx[i]] = '1';
-
-				if (i == 1)
-
-					TileMap[newy[i]][newx[i]] = '2';
-
-				if (i == 2)
-
-					TileMap[newy[i]][newx[i]] = '3';
-
-				if (i == 3)
-
-					TileMap[newy[i]][newx[i]] = '4';
-
-				x[i] = newx[i];
-
-				y[i] = newy[i];
-
-			}
-
-			if (newy[i] == 9 && (newx[i] == 0 || newx[i] == 18)) {  //такая же телепортация
-
-				if (newx[i] == 0)
-
-					newx[i] = 17;
-
-				else
-
-					newx[i] = 1;
-
-				TileMap[y[i]][x[i]] = 'B';
-
-				if (i == 0)
-
-					TileMap[newy[i]][newx[i]] = '1';
-
-				if (i == 1)
-
-					TileMap[newy[i]][newx[i]] = '2';
-
-				if (i == 2)
-
-					TileMap[newy[i]][newx[i]] = '3';
-
-				if (i == 3)
-
-					TileMap[newy[i]][newx[i]] = '4';
-
-				x[i] = newx[i];
-
-				y[i] = newy[i];
-
-			}
-
+			x = newx;
+			y = newy;
 		}
 
+		if (newy == 9 && (newx == 0 || newx == 18)) {  //такая же телепортация
+			if (newx == 0)
+				newx = 17;
+			else
+				newx = 1;
+
+			TileMap[y][x] = 'B';
+			TileMap[newy][newx] = '1' + idx;
+
+			x = newx;
+			y = newy;
+
+		}
 	}
 
 };
@@ -326,31 +234,31 @@ int main() {
 
 	RenderWindow window(VideoMode(W * ts, H * ts), "Maze!");
 
-	Texture t;  //загружаем картинку
-
-	t.loadFromFile("C:/msys64/home/User/Please_God_workt/title.png");
+	Texture t;  //загружаем картинки
+	t.loadFromFile("title.png");
 
 	Sprite plat(t);
-
+	
 	Texture yw;
-
-	yw.loadFromFile("C:/msys64/home/User/Please_God_work/youwin.png");
+	yw.loadFromFile("youwin.png");
 
 	Sprite youwin(yw);
-
 	youwin.setPosition(100, 210);
 
 	Texture yl;
-
-	yl.loadFromFile("C:/msys64/home/User/Please_God_work/youlose.png");
+	yl.loadFromFile("youlose.png");
 
 	Sprite youlose(yl);
-
 	youlose.setPosition(100, 210);
 
 	Player p;
 
-	Enemy en;
+	std::vector<Enemy> enemies = {
+		Enemy(1 , 1 , 1, 0),
+		Enemy(17, 1 , 1, 1),
+		Enemy(1 , 19, 1, 2),
+		Enemy(17, 19, 1, 3)
+	};
 
 	while (window.isOpen())
 
@@ -375,19 +283,19 @@ int main() {
 
 					if (event.key.code == Keyboard::Right)
 
-						p.rotate = 1;
+						p.rotate = right;
 
 					if (event.key.code == Keyboard::Left)
 
-						p.rotate = 2;
+						p.rotate = left;
 
 					if (event.key.code == Keyboard::Up)
 
-						p.rotate = 3;
+						p.rotate = up;
 
 					if (event.key.code == Keyboard::Down)
 
-						p.rotate = 4;
+						p.rotate = down;
 
 				}
 
@@ -395,9 +303,10 @@ int main() {
 
 		if (q < 171 && life) {
 
-			p.update();  //чтобы осуществлялась прорисовка кадров
-
-			en.update();  //чтобы осуществлялась прорисовка кадров
+			p.update();
+			for (auto& enemy : enemies) {
+				enemy.update();  //чтобы осуществлялась прорисовка кадров
+			}
 
 		}
 
@@ -413,27 +322,17 @@ int main() {
 
 				if (TileMap[i][j] == 'C')
 
-					plat.setTextureRect(IntRect(ts * int(p.frame), ts * p.rotate, ts, ts));  //умножаем ts на фреймы, чтобы игрок совершал анимацию
+					plat.setTextureRect(IntRect(ts * int(p.frame), ts * p.rotate, ts, ts));  
+				//умножаем ts на фреймы, чтобы игрок совершал анимацию
 
 				if (TileMap[i][j] == ' ')
 
 					plat.setTextureRect(IntRect(ts, 0, ts, ts));
 
-				if (TileMap[i][j] == '1')
-
-					plat.setTextureRect(IntRect(ts * 5, ts * en.rotate[0], ts, ts));  //аналогично игроку
-
-				if (TileMap[i][j] == '2')
-
-					plat.setTextureRect(IntRect(ts * 5, ts * en.rotate[1], ts, ts));
-
-				if (TileMap[i][j] == '3')
-
-					plat.setTextureRect(IntRect(ts * 5, ts * en.rotate[2], ts, ts));
-
-				if (TileMap[i][j] == '4')
-
-					plat.setTextureRect(IntRect(ts * 5, ts * en.rotate[3], ts, ts));
+				if (0 <= TileMap[i][j] - '1' && TileMap[i][j] - '1' <= 3) {
+					int index = TileMap[i][j] - '1';
+					plat.setTextureRect(IntRect(ts * 5, ts * enemies[index].rot, ts, ts));  //аналогично игроку
+				}
 
 				if (TileMap[i][j] == 'B')
 
